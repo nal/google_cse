@@ -90,6 +90,9 @@ sub search {
     if ( $response ) {
        $self->{response} = $response->content; 
     }
+    else {
+        croak 'Failed to get response from Google CSE!';
+    }
     
 }
 
@@ -97,7 +100,51 @@ sub search {
 sub all {
     my $self = shift;
     
-    return $self;   
+    return unless $self->{response};
+    
+    $self->{search_results} = {};
+    
+    my $data = XMLin($self->{response});
+    
+    # Total items found
+    if ( $data && ref $data eq 'HASH' && exists $data->{RES}{M} ) {
+        $self->{search_results}{count} = $data->{RES}{M};
+    }
+    else {
+        croak 'Error: can not get search results count! Seems like got invalid XML structure in response!';
+    }
+    
+    # Loop though search results and get only required data
+    if ( $data->{RES}{R} && ref $data->{RES}{R} eq 'ARRAY' ) {
+        foreach my $search_item  ( @{ $data->{RES}{R} } ) {
+            push @{ $self->{search_results}{items} },
+                {
+                    title       => $search_item->{T},
+                    description => $search_item->{S},
+                    url         => $search_item->{UE},
+                }
+            ;
+        }
+    }
+    else {
+        croak 'Error: can not get search results! Seems like got invalid XML structure in response!';
+    }
+    
+    return $self->{search_results}{items};
+}
+
+sub count {
+    my $self = shift;
+    
+    return unless $self->{response};
+    
+    # We have not called "all" method before so we have no any results
+    unless ( exists $self->{search_results} ) {
+        # Call it here
+        $self->all;
+    }
+
+    return $self->{search_results}{count};    
 }
 
 
@@ -140,7 +187,7 @@ C<start> - the starting index for the results
     while my $search_item ( $search->all ) {
         print "Search title: $search_item->{title}\n";
         print "Search description: $search_item->{description}\n";
-        print "Search link: $search_item->{link}\n";
+        print "Search url: $search_item->{url}\n";
     }
 
 =head1 USAGE
