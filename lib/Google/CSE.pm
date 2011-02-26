@@ -7,9 +7,7 @@ use Carp;
 use LWP::UserAgent;
 use Data::Dumper;
 
-use URI;
-#use URI::QueryParam;
-
+use URI::QueryParam;
 
 =head1 NAME
 
@@ -31,11 +29,31 @@ sub new {
         
     croak "Required parameter 'cx' is missing" 
         unless $param{cx};
+    
+    # Set default values
+    
+    # Page
+    $param{page} ||= 1;
+    
+    # Items on page
+    $param{num}  ||= 10;
+    
+    # Cursor to current search index (starts from 1)
+    my $start_index = $param{num} * ($param{page} - 1) + 1;
         
     $self = {
-        query   => $param{query},
-        cx      => $param{cx},
-        page    => $param{page} || 1
+        request_params => {
+            query   => $param{query},
+            cx      => $param{cx},
+            page    => $param{page},
+            num     => $param{num},
+            start   => $start_index,
+            client  => 'google-csbe',
+            output  => 'xml_no_dtd',
+            ie      => 'utf8',
+            oe      => 'utf8',
+        },
+        request_url => 'http://www.google.com/search?'
     };
     
     
@@ -48,7 +66,30 @@ sub new {
 sub search {
     my $self = shift;
     
-    return $self;   
+    my $ua = LWP::UserAgent->new(
+        agent   => 'Google CSE',
+        timeout => 10 
+    );
+    
+    # Prepare request params
+    my $uri = URI->new("", "http");
+
+    while ( my ($key, $value) = each %{ $self->{request_params} } ) {
+        $uri->query_param_append( $key, $value );
+    }
+
+    # Prepare request
+    my $req = HTTP::Request->new( GET => $self->{request_url} . $uri->query );
+    
+    warn $req->as_string, "\n";
+    
+    # Send request
+    my $response = $ua->request( $req );
+    
+    # Got response
+    if ( $response ) {
+       $self->{response} = $response->content; 
+    }
     
 }
 
