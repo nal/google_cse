@@ -15,11 +15,11 @@ Google::CSE - Interface to Google Custom Search Engine
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 sub new {
     my ($self, %param) = @_;
@@ -116,7 +116,7 @@ sub all {
     }
     
     # Deserialize XML in response
-    my $data = XMLin($self->{response});
+    my $data = XMLin($self->{response}, ForceArray => [ 'R' ] );
     
     # Total items found
     if ( $data && ref $data eq 'HASH' && exists $data->{RES}{M} ) {
