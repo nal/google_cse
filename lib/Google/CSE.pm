@@ -15,11 +15,11 @@ Google::CSE - Interface to Google Custom Search Engine
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 sub new {
     my ($self, %param) = @_;
@@ -54,7 +54,10 @@ sub new {
             oe      => 'utf8',
             filter  => 1,
         },
-        request_url => 'http://www.google.com/search?'
+        options => {
+            return_raw_response => $param{return_raw_response} || 0,
+        },
+        request_url => 'http://www.google.com/search?',
     };
     
     
@@ -105,6 +108,14 @@ sub all {
     
     $self->{search_results} = {};
     
+    # Optionally return RAW XML response
+    # Sometimes you face problems with deserializing XML, so this option
+    # may help in debugging
+    if ( $self->{options}->{return_raw_response} ) {
+        return $self->{response};
+    }
+    
+    # Deserialize XML in response
     my $data = XMLin($self->{response});
     
     # Total items found
@@ -205,6 +216,8 @@ You can configure the search by passing the following to C<new>:
     cx              The cx parameter which represents the unique ID of the CSE.
                     
     page            Optional. Return results from C<page> page.
+    
+    return_raw_response     Optional. Return RAW XML response from CSE.
 
 
 Both C<query> and C<cx> are required
