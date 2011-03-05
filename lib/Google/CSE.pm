@@ -15,11 +15,11 @@ Google::CSE - Interface to Google Custom Search Engine
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub new {
     my ($self, %param) = @_;
@@ -52,6 +52,7 @@ sub new {
             output  => 'xml_no_dtd',
             ie      => 'utf8',
             oe      => 'utf8',
+            filter  => 1,
         },
         request_url => 'http://www.google.com/search?'
     };
@@ -233,11 +234,36 @@ Example of such structure for query "perl":
 
 An empty list is returned if nothing was found.
 
+=head2 $search->count
+Returns number of items found for last query.
+Example:
+
+    use Google::CSE;
+    
+    # Prepare request
+    my $search = Google::CSE->new(
+        cx      => 'YOUR_GOOGLE_CUSTOM_SEARCH_ENGINE_ID',
+        query   => 'my test query', # Actually your search query
+    );
+    
+    # Do things
+    $search->search;
+    
+    # How many items we have found:
+    print "Found $search->count items for query 'my test query'\n";
+
 =head1 AUTHOR
 
 Alexander Nalivayko, C<< <alexander.nal at gmail.com> >>
 
 =head1 BUGS
+
+Know bugs for now:
+- C<count> method currentry returns VERY inaccurate number of items found
+for the 1st page in set. Workaround is do request with param C<page => 2>,
+save number of items and then do search as usual.
+
+But sometimes even this workaround do not work :(
 
 Please report any bugs or feature requests to C<alexander dot nal at gmail dot com>
 
