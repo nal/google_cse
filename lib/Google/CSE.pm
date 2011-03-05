@@ -15,11 +15,11 @@ Google::CSE - Interface to Google Custom Search Engine
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 sub new {
     my ($self, %param) = @_;
@@ -118,16 +118,24 @@ sub all {
     # Deserialize XML in response
     my $data = XMLin($self->{response}, ForceArray => [ 'R' ] );
     
-    # Total items found
-    if ( $data && ref $data eq 'HASH' && exists $data->{RES}{M} ) {
-        $self->{search_results}{count} = $data->{RES}{M};
+    # Check for valid response
+    if ( $data && ref $data eq 'HASH' && exists $data->{VER} && exists $data->{PARAM} ) {
+        # Total items found
+        if ( exists $data->{RES}{M} ) {
+            # Yup, got something
+            $self->{search_results}{count} = $data->{RES}{M};
+        }
+        else {
+            # Nothing is found
+            return [];
+        }
     }
     else {
         croak 'Error: can not get search results count! Seems like got invalid XML structure in response!';
     }
     
     # Loop though search results and get only required data
-    if ( $data->{RES}{R} && ref $data->{RES}{R} eq 'ARRAY' ) {
+    if ( exists $data->{RES}{R} && ref $data->{RES}{R} eq 'ARRAY' ) {
         foreach my $search_item  ( @{ $data->{RES}{R} } ) {
             push @{ $self->{search_results}{items} },
                 {
